@@ -128,7 +128,7 @@ export default function SindicoDashboard() {
             {/* Botão de abertura que redireciona para a sua página de criação de chamados */}
             {/* DICA: Passe um parâmetro na URL (?origem=sindico) para tratar o retorno após salvar */}
             <Link
-              href="/public/abrir-chamado?retorno=sindico"
+              href="/publico/abrir-chamado?retorno=sindico"
               className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold uppercase tracking-wider px-4 py-3 rounded-xl transition-all text-center flex-1 md:flex-initial"
             >
               ➕ Abrir Chamado
