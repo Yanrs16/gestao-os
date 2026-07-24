@@ -126,7 +126,7 @@ export default function PublicOrderPage() {
       const { error: insertError } = await supabase.from("orders").insert([
         {
           condominium_id: condominioSelecionado.id,
-          os_number: randomCode, // 🔥 AGORA SALVA O PROTOCOLO DE VERDADE (Ex: OS-1445)
+          os_number: randomCode, //  AGORA SALVA O PROTOCOLO DE VERDADE (Ex: OS-1445)
           title: `${data.category.toUpperCase()} - Solicitado por ${data.name}`,
           description: `Vínculo: ${data.type} | Local: ${data.unit_block} | Tel: ${data.phone || "Não informado"} \n\nDescrição do Defeito: ${data.description}`,
           status: "aberto",
@@ -429,7 +429,7 @@ export default function PublicOrderPage() {
               </div>
             </div>
           )}
-          ;{/* BOTÕES DE NAVEGAÇÃO INTERATIVOS */}
+          {/* BOTÕES DE NAVEGAÇÃO INTERATIVOS */}
           <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-800">
             {step > 1 ? (
               <button

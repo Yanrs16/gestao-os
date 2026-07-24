@@ -19,7 +19,10 @@ export default function HomePage() {
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt,
+      );
     };
   }, []);
 
@@ -38,7 +41,7 @@ export default function HomePage() {
   const handleInstallApp = async () => {
     if (!deferredPrompt) {
       alert(
-        "Para instalar no iPhone (iOS): toque no botão 'Compartilhar' e escolha 'Adicionar à Tela de Início'.\n\nNo Android: caso o pop-up automático não apareça, utilize o menu de 3 pontos do navegador."
+        "Para instalar no iPhone (iOS): toque no botão 'Compartilhar' e escolha 'Adicionar à Tela de Início'.\n\nNo Android: caso o pop-up automático não apareça, utilize o menu de 3 pontos do navegador.",
       );
       return;
     }
@@ -122,7 +125,7 @@ export default function HomePage() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto pt-2">
             <Link
-              href="/abrir-chamado"
+              href="/publico/abrir-chamado"
               className="w-full px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-base font-bold shadow-lg shadow-blue-500/20 transition-all transform hover:-translate-y-0.5 text-center uppercase tracking-wide"
             >
               Abrir um Chamado
@@ -219,7 +222,7 @@ export default function HomePage() {
             </h4>
             <div className="flex flex-col gap-1.5 text-slate-500">
               <Link
-                href="/abrir-chamado"
+                href="publico/abrir-chamado"
                 className="hover:text-blue-400 transition-colors"
               >
                 Abertura de Chamados
