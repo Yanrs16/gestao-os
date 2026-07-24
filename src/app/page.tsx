@@ -35,7 +35,7 @@ export default function HomePage() {
       termoFormatado = `OS-${termoFormatado.replace("OS", "").trim()}`;
     }
 
-    router.push(`/consultar-os?code=${termoFormatado}`);
+    router.push(`/publico/consultar-os?code=${termoFormatado}`);
   };
 
   const handleInstallApp = async () => {
@@ -82,7 +82,7 @@ export default function HomePage() {
               href="/admin/login"
               className="text-xs font-bold uppercase tracking-wider bg-slate-900 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 px-4 py-2.5 rounded-xl transition-all shadow-md block whitespace-nowrap"
             >
-              👑 Admin
+              🛡️ Admin
             </Link>
             <Link
               href="/login"
