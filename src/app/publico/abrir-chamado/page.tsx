@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation"; // Adicionado para fazer a navegação de saída
-import { orderRepository } from "@/core/orders/services/orderRepository";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { useSearchParams } from "next/navigation";
 
-export default function PublicOrderPage() {
-  const router = useRouter(); // Inicializando o roteador do Next.js
+export const dynamic = "force-dynamic";
+
+// Componente Interno com todo o seu Formulário
+function PublicOrderContent() {
+  const router = useRouter();
   const [condominiums, setCondominiums] = useState<any[]>([]);
   const { register, handleSubmit, reset, watch, trigger, setValue } = useForm();
   const [loading, setLoading] = useState(false);
@@ -23,22 +24,18 @@ export default function PublicOrderPage() {
     if (file) {
       setFotoFile(file);
       setFotoPreview(URL.createObjectURL(file));
-      setValue("image", e.target.files); // Sincroniza com o react-hook-form
+      setValue("image", e.target.files);
     }
   };
 
-  // Limpa a foto da memória e limpa o formulário
   const handleRemoveFoto = () => {
-    if (fotoPreview) URL.revokeObjectURL(fotoPreview); // Evita vazamento de memória
+    if (fotoPreview) URL.revokeObjectURL(fotoPreview);
     setFotoFile(null);
     setFotoPreview(null);
     setValue("image", null);
   };
 
-  // Estado para controlar em qual etapa o usuário está (1, 2 ou 3)
   const [step, setStep] = useState(1);
-
-  // Monitora os campos para validação visual dos botões
   const watchAllFields = watch();
 
   useEffect(() => {
@@ -47,7 +44,7 @@ export default function PublicOrderPage() {
         .from("condominiums")
         .select("*")
         .eq("ativo", true)
-        .order("nome", { ascending: true }); //
+        .order("nome", { ascending: true });
 
       if (error) {
         console.error("Erro na busca:", error);
@@ -60,7 +57,6 @@ export default function PublicOrderPage() {
     fetchCondos();
   }, []);
 
-  // Função para avançar de etapa validando apenas os campos da etapa atual
   const nextStep = async () => {
     let fieldsToValidate: any[] = [];
     if (step === 1) fieldsToValidate = ["name", "type"];
@@ -79,11 +75,9 @@ export default function PublicOrderPage() {
     try {
       let image_before_url = "";
 
-      // 1. Tratamento, Limite de Tamanho e Upload da Imagem
       if (data.image?.[0]) {
         const file = data.image[0];
 
-        // CORREÇÃO/MELHORIA: Limita o tamanho em 5MB (5 * 1024 * 1024 bytes)
         const maxFileSize = 5 * 1024 * 1024;
         if (file.size > maxFileSize) {
           throw new Error(
@@ -111,7 +105,6 @@ export default function PublicOrderPage() {
         image_before_url = publicUrlData.publicUrl;
       }
 
-      // 2. Busca o ID do condomínio baseado no nome selecionado no formulário
       const condominioSelecionado = condominiums.find(
         (c) => c.nome === data.condominium,
       );
@@ -119,14 +112,12 @@ export default function PublicOrderPage() {
         throw new Error("Condomínio selecionado não foi encontrado no banco.");
       }
 
-      // 3. Cria um código de protocolo aleatório para o morador (Ex: OS-1234)
       const randomCode = `OS-${Math.floor(1000 + Math.random() * 9000)}`;
 
-      // 4. Salva direto na tabela 'orders' do Supabase sincronizada com o nosso SQL
       const { error: insertError } = await supabase.from("orders").insert([
         {
           condominium_id: condominioSelecionado.id,
-          os_number: randomCode, //  AGORA SALVA O PROTOCOLO DE VERDADE (Ex: OS-1445)
+          os_number: randomCode,
           title: `${data.category.toUpperCase()} - Solicitado por ${data.name}`,
           description: `Vínculo: ${data.type} | Local: ${data.unit_block} | Tel: ${data.phone || "Não informado"} \n\nDescrição do Defeito: ${data.description}`,
           status: "aberto",
@@ -136,7 +127,6 @@ export default function PublicOrderPage() {
 
       if (insertError) throw insertError;
 
-      // Se deu tudo certo, exibe o código gerado na tela de sucesso
       setGeneratedCode(randomCode);
       reset();
       handleRemoveFoto();
@@ -151,7 +141,6 @@ export default function PublicOrderPage() {
     }
   };
 
-  // Tela de Sucesso Ajustada com as duas opções
   if (generatedCode) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
@@ -203,7 +192,6 @@ export default function PublicOrderPage() {
   return (
     <div className="min-h-screen bg-slate-950 py-12 px-4 sm:px-6 lg:px-8 flex flex-col justify-center transition-all duration-300">
       <div className="max-w-md w-full mx-auto bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden">
-        {/* BOTÃO VOLTAR FIXO NO TOPO DO CARD */}
         <div className="px-6 pt-4 pb-2 border-b border-slate-850 flex justify-between items-center bg-slate-900/40">
           <button
             type="button"
@@ -220,7 +208,6 @@ export default function PublicOrderPage() {
           </span>
         </div>
 
-        {/* Cabeçalho */}
         <div className="px-6 py-6 border-b border-slate-800 bg-slate-900/50 text-center">
           <h1 className="text-lg font-bold text-white tracking-wider uppercase">
             Suporte Técnico
@@ -229,7 +216,6 @@ export default function PublicOrderPage() {
             Segurança Eletrônica & Automação
           </p>
 
-          {/* Barra de Progresso Interativa */}
           <div className="mt-6 flex items-center justify-between relative max-w-xs mx-auto">
             <div className="absolute left-0 right-0 h-0.5 bg-slate-800 top-1/2 -translate-y-1/2 z-0"></div>
             <div
@@ -252,9 +238,7 @@ export default function PublicOrderPage() {
           </div>
         </div>
 
-        {/* Formulário */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
-          {/* ETAPA 1: DADOS PESSOAIS */}
           {step === 1 && (
             <div className="space-y-4 animate-fade-in">
               <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-2">
@@ -296,7 +280,7 @@ export default function PublicOrderPage() {
               </div>
             </div>
           )}
-          {/* ETAPA 2: LOCALIZAÇÃO */}
+
           {step === 2 && (
             <div className="space-y-4 animate-fade-in">
               <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-2">
@@ -312,7 +296,6 @@ export default function PublicOrderPage() {
                 >
                   <option value="">Escolha um condomínio...</option>
                   {condominiums.map((condo) => (
-                    // Mudamos condo.name para condo.nome nas duas linhas abaixo:
                     <option key={condo.id} value={condo.nome}>
                       🏢 {condo.nome}
                     </option>
@@ -331,7 +314,7 @@ export default function PublicOrderPage() {
               </div>
             </div>
           )}
-          {/* ETAPA 3: DETALHES DO DEFEITO */}
+
           {step === 3 && (
             <div className="space-y-4 animate-fade-in">
               <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-2">
@@ -380,15 +363,12 @@ export default function PublicOrderPage() {
                 />
               </div>
 
-              {/* CAMPO DE FOTO COM BOTÃO REMOVER DINÂMICO */}
-              {/* CAMPO DE FOTO COM PRÉVIA VISUAL E REMOÇÃO */}
               <div>
                 <label className="block text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">
                   Anexar Foto (Opcional)
                 </label>
 
                 {!fotoPreview ? (
-                  /* CAIXA DE UPLOAD QUANDO NÃO HÁ FOTO */
                   <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-800 rounded-2xl cursor-pointer hover:border-slate-700 hover:bg-slate-900/50 transition-all group">
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
                       <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">
@@ -409,7 +389,6 @@ export default function PublicOrderPage() {
                     />
                   </label>
                 ) : (
-                  /* CARD DE PRÉVIA DA FOTO */
                   <div className="relative w-full h-48 bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden">
                     <img
                       src={fotoPreview}
@@ -429,7 +408,7 @@ export default function PublicOrderPage() {
               </div>
             </div>
           )}
-          {/* BOTÕES DE NAVEGAÇÃO INTERATIVOS */}
+
           <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-800">
             {step > 1 ? (
               <button
@@ -464,5 +443,20 @@ export default function PublicOrderPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+// Componente Exportado Envelopado pelo Suspense
+export default function PublicOrderPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400 text-sm">
+          Carregando formulário...
+        </div>
+      }
+    >
+      <PublicOrderContent />
+    </Suspense>
   );
 }
