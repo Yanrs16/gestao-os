@@ -121,7 +121,7 @@ function PublicOrderContent() {
           title: `${data.category.toUpperCase()} - Solicitado por ${data.name}`,
           description: `Vínculo: ${data.type} | Local: ${data.unit_block} | Tel: ${data.phone || "Não informado"} \n\nDescrição do Defeito: ${data.description}`,
           status: "aberto",
-          updated_by: image_before_url,
+          photo_url: image_before_url, // Mudou de updated_by para photo_url!
         },
       ]);
 

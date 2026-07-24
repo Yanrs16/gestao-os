@@ -241,15 +241,29 @@ function TrackOrderContent() {
               </div>
             </div>
 
-            {/* SEÇÃO DA IMAGEM DE EVIDÊNCIA */}
-            {order.updated_by && (
+            {/* FOTO DO MORADOR (Abertura do Chamado) */}
+            {order.photo_url && (
               <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-950 p-3 text-center">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 text-left mb-2 pl-1">
-                  Evidência Anexada no Chamado:
+                <p className="text-[10px] font-bold uppercase tracking-wider text-blue-400 text-left mb-2 pl-1">
+                  📸 Foto Anexada na Abertura:
+                </p>
+                <img
+                  src={order.photo_url}
+                  alt="Foto do defeito"
+                  className="max-h-[220px] mx-auto object-contain rounded-lg shadow-md"
+                />
+              </div>
+            )}
+
+            {/*  FOTO DO TÉCNICO (Conclusão do Chamado) */}
+            {order.status === "concluido" && order.updated_by && (
+              <div className="rounded-xl overflow-hidden border border-emerald-500/20 bg-slate-950 p-3 text-center">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 text-left mb-2 pl-1">
+                  ✅ Evidência de Conclusão (Técnico):
                 </p>
                 <img
                   src={order.updated_by}
-                  alt="Foto do chamado"
+                  alt="Foto de conclusão"
                   className="max-h-[220px] mx-auto object-contain rounded-lg shadow-md"
                 />
               </div>

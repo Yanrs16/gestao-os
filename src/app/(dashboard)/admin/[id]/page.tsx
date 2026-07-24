@@ -31,6 +31,7 @@ interface Order {
   tecnico_name?: string;
   data_agendamento?: string | null;
   updated_by?: string; // URL da imagem/evidência
+  photo_url?: string; // URL da imagem/evidência
   profiles?: {
     full_name: string;
     email: string;
@@ -728,36 +729,70 @@ export default function CondominioInterno() {
                   </div>
                 </div>
 
-                <div className="flex flex-col justify-between">
+                <div className="flex flex-col gap-4">
+                  {/* 📸 FOTO DO MORADOR (Abertura do Chamado) */}
                   <div>
-                    <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
-                      Evidência / Imagem Anexada (Clique para ampliar)
+                    <label className="text-[10px] font-bold uppercase text-blue-400 block mb-1">
+                      📸 Foto do Defeito (Morador) - Clique para ampliar
                     </label>
-                    {selectedOrder.updated_by ? (
-                      <div className="relative group rounded-xl overflow-hidden border border-slate-800 bg-slate-950 h-[280px] p-2 mt-1">
+                    {selectedOrder.photo_url ? (
+                      <div className="relative group rounded-xl overflow-hidden border border-slate-800 bg-slate-950 h-[220px] p-2 mt-1">
                         <img
-                          src={selectedOrder.updated_by}
-                          alt="Evidência enviada"
+                          src={selectedOrder.photo_url}
+                          alt="Foto do Defeito"
                           onClick={() => setIsPhotoZoomed(true)}
                           className="max-h-full max-w-full object-contain rounded-lg mx-auto cursor-zoom-in transition-transform duration-200 group-hover:scale-[1.02]"
                         />
                         <div
                           onClick={() => setIsPhotoZoomed(true)}
-                          className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-zoom-in md:pointer-events-auto"
+                          className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-zoom-in"
                         >
-                          <span className="bg-slate-900/80 border border-slate-700 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1">
+                          <span className="bg-slate-900/80 border border-slate-700 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 text-white">
                             🔍 Clique para Ampliar
                           </span>
                         </div>
                       </div>
                     ) : (
-                      <div className="border border-dashed border-slate-800 bg-slate-950/25 h-[280px] flex flex-col items-center justify-center rounded-xl text-center mt-1">
+                      <div className="border border-dashed border-slate-800 bg-slate-950/25 h-[120px] flex items-center justify-center rounded-xl text-center mt-1">
                         <p className="text-xs text-slate-500">
-                          📁 Nenhuma foto foi anexada a esta ordem.
+                          📁 Nenhuma foto anexada pelo morador.
                         </p>
                       </div>
                     )}
                   </div>
+
+                  {/* 🛠️ FOTO DO TÉCNICO (Conclusão do Chamado) */}
+                  {selectedOrder.status === "concluido" && (
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-emerald-400 block mb-1">
+                        ✅ Comprovante de Conclusão (Técnico)
+                      </label>
+                      {selectedOrder.updated_by ? (
+                        <div className="relative group rounded-xl overflow-hidden border border-emerald-500/20 bg-slate-950 h-[220px] p-2 mt-1">
+                          <img
+                            src={selectedOrder.updated_by}
+                            alt="Evidência do Técnico"
+                            onClick={() => setIsPhotoZoomed(true)}
+                            className="max-h-full max-w-full object-contain rounded-lg mx-auto cursor-zoom-in transition-transform duration-200 group-hover:scale-[1.02]"
+                          />
+                          <div
+                            onClick={() => setIsPhotoZoomed(true)}
+                            className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-zoom-in"
+                          >
+                            <span className="bg-slate-900/80 border border-slate-700 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 text-white">
+                              🔍 Clique para Ampliar
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="border border-dashed border-slate-800 bg-slate-950/25 h-[120px] flex items-center justify-center rounded-xl text-center mt-1">
+                          <p className="text-xs text-slate-500">
+                            📁 Sem foto de conclusão enviada pelo técnico.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 

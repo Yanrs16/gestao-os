@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { ResetPasswordModal } from "@/components/ResetPasswordModal";
 
 export default function TecnicoDashboard() {
   const router = useRouter();
@@ -60,13 +59,45 @@ export default function TecnicoDashboard() {
   }, []);
 
   const fetchTecnicoOrders = async (tecnicoId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("orders")
-      .select("*, condominiums(nome, endereco)")
+      .select("*, condominiums(nome, endereco)") // Nome correto em inglês
       .eq("tecnico_id", tecnicoId)
       .order("created_at", { ascending: false });
 
+    if (error) {
+      console.error("Erro ao buscar chamados:", error);
+      return;
+    }
+
     if (data) setOrders(data);
+  };
+
+  // Função para extrair a URL da foto do morador sem erros de tipo no TS
+  const getOrderImageUrl = (order: any) => {
+    if (!order) return null;
+
+    const rawPath =
+      order.photo_url ||
+      order.foto_url ||
+      order.image_url ||
+      order.foto ||
+      order.photo ||
+      order.image ||
+      order.anexo;
+
+    if (!rawPath || typeof rawPath !== "string") return null;
+
+    if (rawPath.startsWith("http")) {
+      return rawPath;
+    }
+
+    try {
+      const { data } = supabase.storage.from("os_files").getPublicUrl(rawPath);
+      return data.publicUrl;
+    } catch (e) {
+      return null;
+    }
   };
 
   const filteredOrders = orders.filter((order) => {
@@ -77,6 +108,7 @@ export default function TecnicoDashboard() {
   });
 
   const handleManageOrder = (order: any) => {
+    console.log(" DADOS COMPLETOS DA OS SELECIONADA:", order);
     setSelectedOrder(order);
     setImageFile(null);
     setImagePreview(null);
@@ -304,6 +336,30 @@ export default function TecnicoDashboard() {
               </p>
             </div>
 
+            {/* 📸 FOTO DO PROBLEMA (MORADOR) */}
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider block">
+                📸 Foto do Problema (Morador):
+              </span>
+
+              {getOrderImageUrl(selectedOrder) ? (
+                <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-950 p-2">
+                  <img
+                    src={getOrderImageUrl(selectedOrder)!}
+                    alt="Foto enviada pelo morador"
+                    className="w-full max-h-48 object-contain rounded-lg mx-auto"
+                    onError={(e) => {
+                      console.error("Erro ao carregar imagem:", e);
+                    }}
+                  />
+                </div>
+              ) : (
+                <p className="text-[11px] text-slate-500 italic bg-slate-950 p-2.5 rounded-xl border border-slate-800/50">
+                  Nenhuma foto anexada pelo morador para esta OS.
+                </p>
+              )}
+            </div>
+
             {selectedOrder.status === "concluido" ? (
               <div className="space-y-3">
                 <div className="bg-emerald-500/10 text-emerald-400 p-3 rounded-xl border border-emerald-500/20 text-center text-xs font-bold">
@@ -311,10 +367,13 @@ export default function TecnicoDashboard() {
                 </div>
                 {selectedOrder.updated_by && (
                   <div>
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block mb-1">
+                      ✅ Evidência da Conclusão:
+                    </span>
                     <img
                       src={selectedOrder.updated_by}
-                      alt="Evidência"
-                      className="w-full h-48 object-cover rounded-xl mt-1 border border-slate-800"
+                      alt="Evidência do Técnico"
+                      className="w-full h-48 object-cover rounded-xl border border-slate-800"
                     />
                   </div>
                 )}
