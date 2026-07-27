@@ -9,6 +9,10 @@ export default function SindicoDashboard() {
   const [loading, setLoading] = useState(true);
   const [condoName, setCondoName] = useState("");
 
+  // ESTADOS PARA CONTROLE DE FILTRO
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+
   // Contadores para o resumo
   const [resumo, setResumo] = useState({
     total: 0,
@@ -33,7 +37,7 @@ export default function SindicoDashboard() {
         }
 
         // 2. Busca o condomínio vinculado ao perfil do usuário
-        const { data: perfil, error: perfilError } = await supabase
+        const { data: perfil } = await supabase
           .from("profiles")
           .select("condominium_id")
           .eq("id", user.id)
@@ -50,7 +54,7 @@ export default function SindicoDashboard() {
           return;
         }
 
-        // 3. Busca o nome do condomínio de forma direta e garantida
+        // 3. Busca o nome do condomínio
         const { data: condo } = await supabase
           .from("condominiums")
           .select("nome")
@@ -61,7 +65,7 @@ export default function SindicoDashboard() {
           setCondoName(condo.nome);
         }
 
-        // 4. Busca apenas os chamados deste condomínio específico (sem precisar fazer join)
+        // 4. Busca chamados do condomínio
         const { data: chamados, error: chamadosError } = await supabase
           .from("orders")
           .select(
@@ -85,7 +89,6 @@ export default function SindicoDashboard() {
         if (chamados) {
           setOrders(chamados);
 
-          // Calcula os contadores do resumo
           const total = chamados.length;
           const concluidos = chamados.filter(
             (o) => o.status === "concluido",
@@ -104,8 +107,31 @@ export default function SindicoDashboard() {
     carregarDadosDoSindico();
   }, []);
 
+  // Lógica de filtragem dos chamados
+  const filteredOrders = orders.filter((o) => {
+    const matchesSearch =
+      searchTerm.trim() === "" ||
+      (o.os_number &&
+        o.os_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (o.title && o.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (o.description &&
+        o.description.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const matchesStatus = statusFilter === "" || o.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  // Função para limpar os filtros
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("");
+  };
+
+  const isFiltered = searchTerm.trim() !== "" || statusFilter !== "";
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
+    <div className="min-h-screen max-w-full overflow-x-hidden bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* TOPO COM IDENTIFICAÇÃO E AÇÕES */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between bg-slate-900 p-6 rounded-2xl border border-slate-800 gap-4">
@@ -125,8 +151,6 @@ export default function SindicoDashboard() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Botão de abertura que redireciona para a sua página de criação de chamados */}
-            {/* DICA: Passe um parâmetro na URL (?origem=sindico) para tratar o retorno após salvar */}
             <Link
               href="/publico/abrir-chamado?retorno=sindico"
               className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold uppercase tracking-wider px-4 py-3 rounded-xl transition-all text-center flex-1 md:flex-initial"
@@ -171,63 +195,104 @@ export default function SindicoDashboard() {
           </div>
         </div>
 
-        {/* TABELA DE CONSULTA DE CHAMADOS */}
-        <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
-          <div className="p-5 border-b border-slate-800">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300">
-              Acompanhamento de Ordens de Serviço
+        {/* CONTÊINER DE CONSULTA DE CHAMADOS */}
+        <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl space-y-4 p-5">
+          <div className="border-b border-slate-800 pb-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+              <span>🔍</span> Acompanhamento de Ordens de Serviço
             </h2>
           </div>
 
+          {/* BARRA DE FILTROS E BUSCA */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <input
+              type="text"
+              placeholder="Digite o Nº da OS, título ou descrição..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-xs text-white outline-none focus:border-indigo-500 transition-colors"
+            />
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-xs text-slate-300 outline-none focus:border-indigo-500 transition-colors"
+            >
+              <option value="">Todos os Status</option>
+              <option value="aberto">Aberto</option>
+              <option value="agendado">Agendado</option>
+              <option value="em_andamento">Em Andamento</option>
+              <option value="concluido">Concluído</option>
+            </select>
+
+            {isFiltered && (
+              <button
+                onClick={handleClearFilters}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs px-4 py-2.5 rounded-xl transition-all"
+              >
+                🧹 Limpar Filtros
+              </button>
+            )}
+          </div>
+
+          {/* ÁREA DE EXIBIÇÃO DA TABELA */}
           {loading ? (
             <div className="p-10 text-center text-sm text-slate-400">
               Buscando os chamados do seu condomínio...
             </div>
-          ) : orders.length === 0 ? (
-            <div className="p-10 text-center text-sm text-slate-400">
-              Nenhum chamado encontrado para este condomínio.
+          ) : filteredOrders.length === 0 ? (
+            <div className="p-10 text-center text-xs text-slate-500">
+              {isFiltered
+                ? "Nenhuma Ordem de Serviço localizada para os filtros aplicados."
+                : "Nenhuma Ordem de Serviço encontrada para este condomínio."}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+            <div className="w-full overflow-x-auto rounded-xl border border-slate-800/60">
+              <table className="w-full text-left border-collapse text-xs min-w-[650px]">
                 <thead>
-                  <tr className="border-b border-slate-800 bg-slate-900/50 text-slate-400 font-bold uppercase">
-                    <th className="p-4">Nº da OS</th>
-                    <th className="p-4">Título</th>
-                    <th className="p-4">Abertura</th>
-                    <th className="p-4">Status</th>
-                    <th className="p-4 text-center">Ações</th>
+                  <tr className="border-b border-slate-800 bg-slate-950 text-slate-400 font-bold uppercase">
+                    <th className="p-4 whitespace-nowrap">Nº da OS</th>
+                    <th className="p-4 whitespace-nowrap">Título</th>
+                    <th className="p-4 whitespace-nowrap">Abertura</th>
+                    <th className="p-4 whitespace-nowrap">Status</th>
+                    <th className="p-4 text-center whitespace-nowrap">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/50">
-                  {orders.map((order) => (
+                  {filteredOrders.map((order) => (
                     <tr
                       key={order.id}
                       className="hover:bg-slate-800/30 transition-colors"
                     >
-                      <td className="p-4 font-mono font-bold text-indigo-400">
+                      <td className="p-4 font-mono font-bold text-indigo-400 whitespace-nowrap">
                         {order.os_number || "N/A"}
                       </td>
-                      <td className="p-4 font-semibold text-white max-w-xs truncate">
+                      <td className="p-4 font-semibold text-white max-w-xs truncate whitespace-nowrap">
                         {order.title}
                       </td>
-                      <td className="p-4 text-slate-400">
+                      <td className="p-4 text-slate-400 whitespace-nowrap">
                         {new Date(order.created_at).toLocaleDateString("pt-BR")}
                       </td>
-                      <td className="p-4">
+                      <td className="p-4 whitespace-nowrap">
                         <span
                           className={`px-2 py-1 rounded-md font-bold uppercase text-[10px] tracking-wider ${
                             order.status === "concluido"
                               ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                              : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                              : order.status === "agendado"
+                                ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                                : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                           }`}
                         >
                           {order.status === "concluido"
                             ? "Concluído"
-                            : "Em Aberto"}
+                            : order.status === "agendado"
+                              ? "Agendado"
+                              : order.status === "em_andamento"
+                                ? "Em Andamento"
+                                : "Em Aberto"}
                         </span>
                       </td>
-                      <td className="p-4 text-center">
+                      <td className="p-4 text-center whitespace-nowrap">
                         <Link
                           href={`/publico/consultar-os?code=${order.os_number}&retorno=sindico`}
                           className="inline-block bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3 py-1.5 rounded-lg transition-all"

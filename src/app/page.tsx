@@ -149,7 +149,7 @@ export default function HomePage() {
                 type="submit"
                 className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 rounded-xl uppercase tracking-wider transition-all min-w-[120px]"
               >
-                Consultar OS 🚀
+                Consultar OS
               </button>
             </form>
           </div>

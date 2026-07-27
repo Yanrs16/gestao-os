@@ -466,25 +466,25 @@ export default function AdminDashboard() {
         </div>
 
         <div className="flex gap-3">
-          {activeTab === "condos" ? (
-            <button
-              onClick={() => setShowForm(!showForm)}
-              className="text-xs font-bold uppercase tracking-wider bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl transition-all shadow-md"
-            >
-              {showForm ? "✖️ Fechar" : "➕ Novo Condomínio"}
-            </button>
-          ) : (
-            <button
-              onClick={() => setShowUserForm(!showUserForm)}
-              className="text-xs font-bold uppercase tracking-wider bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl transition-all shadow-md"
-            >
-              {showUserForm
-                ? "✖️ Fechar"
-                : activeTab === "tecnicos"
-                  ? "➕ Novo Técnico"
-                  : "➕ Novo Síndico"}
-            </button>
-          )}
+          {activeTab === "condos"
+            ? !showForm && (
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="text-xs font-bold uppercase tracking-wider bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl transition-all shadow-md"
+                >
+                  ➕ Novo Condomínio
+                </button>
+              )
+            : !showUserForm && (
+                <button
+                  onClick={() => setShowUserForm(true)}
+                  className="text-xs font-bold uppercase tracking-wider bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl transition-all shadow-md"
+                >
+                  {activeTab === "tecnicos"
+                    ? "➕ Novo Técnico"
+                    : "➕ Novo Síndico"}
+                </button>
+              )}
           <button
             onClick={handleLogout}
             className="text-xs font-bold uppercase tracking-wider bg-slate-900 hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 border border-slate-800 px-4 py-2.5 rounded-xl transition-all"
@@ -659,13 +659,22 @@ export default function AdminDashboard() {
                       </datalist>
                     </div>
                   </div>
-                  <button
-                    type="submit"
-                    disabled={isCreating}
-                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all"
-                  >
-                    {isCreating ? "Cadastrando..." : "Salvar Condomínio"}
-                  </button>
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setShowForm(false)}
+                      className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold uppercase tracking-wider rounded-xl transition-all"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isCreating}
+                      className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all disabled:opacity-50"
+                    >
+                      {isCreating ? "Cadastrando..." : "Salvar Condomínio"}
+                    </button>
+                  </div>
                 </form>
               </section>
             )}
@@ -763,8 +772,8 @@ export default function AdminDashboard() {
         {(activeTab === "tecnicos" || activeTab === "sindicos") && (
           <>
             {showUserForm && (
-              <section className="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-xl space-y-4 shadow-2xl">
-                <h2 className="text-sm font-black uppercase tracking-wider text-white border-b border-slate-850 pb-2">
+              <section className="bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl w-full max-w-xl space-y-4 shadow-2xl">
+                <h2 className="text-sm font-black uppercase tracking-wider text-white border-b border-slate-800 pb-2">
                   ➕ Cadastrar{" "}
                   {activeTab === "tecnicos" ? "Técnico" : "Síndico"}
                 </h2>
@@ -831,93 +840,109 @@ export default function AdminDashboard() {
                       </div>
                     )}
                   </div>
-                  <button
-                    type="submit"
-                    disabled={isCreatingUser}
-                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all"
-                  >
-                    {isCreatingUser ? "Salvando..." : "Salvar Operador"}
-                  </button>
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setShowUserForm(false)}
+                      className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold uppercase tracking-wider rounded-xl transition-all"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isCreatingUser}
+                      className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all disabled:opacity-50"
+                    >
+                      {isCreatingUser ? "Salvando..." : "Salvar Operador"}
+                    </button>
+                  </div>
                 </form>
               </section>
             )}
 
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-950 text-slate-400 uppercase tracking-wider font-bold border-b border-slate-850">
-                    <th className="p-4">Nome</th>
-                    <th className="p-4">E-mail</th>
-                    {activeTab === "sindicos" && (
-                      <th className="p-4">Condomínio Vinculado</th>
-                    )}
-                    <th className="p-4 text-center">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-850 text-slate-200 font-medium">
-                  {filteredUsers.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={activeTab === "sindicos" ? 4 : 3}
-                        className="p-8 text-center text-slate-500"
-                      >
-                        Nenhum operador localizado nesta categoria.
-                      </td>
+            {/* CONTAINER DA TABELA COM OVERFLOW RESPONSIVO */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl w-full overflow-hidden">
+              {/* Adicionado overflow-x-auto para permitir deslizar no celular sem cortar nada */}
+              <div className="w-full overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse min-w-[650px]">
+                  <thead>
+                    <tr className="bg-slate-950 text-slate-400 uppercase tracking-wider font-bold border-b border-slate-800">
+                      <th className="p-4 whitespace-nowrap">Nome</th>
+                      <th className="p-4 whitespace-nowrap">E-mail</th>
+                      {activeTab === "sindicos" && (
+                        <th className="p-4 whitespace-nowrap">
+                          Condomínio Vinculado
+                        </th>
+                      )}
+                      <th className="p-4 text-center whitespace-nowrap">
+                        Ações
+                      </th>
                     </tr>
-                  ) : (
-                    filteredUsers.map((user) => (
-                      <tr
-                        key={user.id}
-                        className="hover:bg-slate-850/20 transition-colors"
-                      >
-                        <td className="p-4 font-bold text-white">
-                          {user.full_name}
-                        </td>
-                        <td className="p-4 font-mono text-slate-400">
-                          {user.email || "Não informado"}
-                        </td>
-                        {activeTab === "sindicos" && (
-                          <td className="p-4 text-blue-400 font-semibold">
-                            🏢{" "}
-                            {condominiums.find(
-                              (c) => c.id === user.condominium_id,
-                            )?.nome || "Não vinculado"}
-                          </td>
-                        )}
-                        {/* ALTERAÇÃO: Coluna de ações agora conta com o botão "Editar" funcional */}
-                        <td className="p-4 text-center flex items-center justify-center gap-2">
-                          TypeScript
-                          <button
-                            onClick={() => {
-                              // Passa o id e o email do técnico/síndico da linha atual da tabela
-                              setUserToReset({
-                                id: user.id,
-                                email: user.email,
-                              });
-                              setModalOpen(true);
-                            }}
-                            className="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
-                          >
-                            🔑 Resetar Senha
-                          </button>
-                          <button
-                            onClick={() => handleOpenEditUserModal(user)}
-                            className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white rounded-lg transition-all font-bold"
-                          >
-                            ⚙️ Editar
-                          </button>
-                          <button
-                            onClick={() => handleSoftDeleteUser(user.id)}
-                            className="px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white rounded-lg transition-all font-bold"
-                          >
-                            🗑️ Desativar
-                          </button>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800 text-slate-200 font-medium">
+                    {filteredUsers.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={activeTab === "sindicos" ? 4 : 3}
+                          className="p-8 text-center text-slate-500"
+                        >
+                          Nenhum operador localizado nesta categoria.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      filteredUsers.map((user) => (
+                        <tr
+                          key={user.id}
+                          className="hover:bg-slate-800/40 transition-colors"
+                        >
+                          <td className="p-4 font-bold text-white whitespace-nowrap">
+                            {user.full_name}
+                          </td>
+                          <td className="p-4 font-mono text-slate-400 whitespace-nowrap">
+                            {user.email || "Não informado"}
+                          </td>
+                          {activeTab === "sindicos" && (
+                            <td className="p-4 text-blue-400 font-semibold whitespace-nowrap">
+                              🏢{" "}
+                              {condominiums.find(
+                                (c) => c.id === user.condominium_id,
+                              )?.nome || "Não vinculado"}
+                            </td>
+                          )}
+                          <td className="p-4 text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => {
+                                  setUserToReset({
+                                    id: user.id,
+                                    email: user.email,
+                                  });
+                                  setModalOpen(true);
+                                }}
+                                className="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-3 py-1.5 rounded-xl transition-all whitespace-nowrap"
+                              >
+                                🔑 Resetar Senha
+                              </button>
+                              <button
+                                onClick={() => handleOpenEditUserModal(user)}
+                                className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white rounded-lg transition-all font-bold whitespace-nowrap"
+                              >
+                                ⚙️ Editar
+                              </button>
+                              <button
+                                onClick={() => handleSoftDeleteUser(user.id)}
+                                className="px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white rounded-lg transition-all font-bold whitespace-nowrap"
+                              >
+                                🗑️ Desativar
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </>
         )}

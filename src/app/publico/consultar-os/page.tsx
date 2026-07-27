@@ -16,7 +16,7 @@ function TrackOrderContent() {
   const urlCode = searchParams.get("code");
   const retorno = searchParams.get("retorno");
 
-  // Função que faz a busca real no banco de dados
+  // Função de busca com JOIN nas tabelas de feedbacks e anexos
   const buscarOS = async (codigoParaBuscar: string) => {
     if (!codigoParaBuscar.trim()) return;
 
@@ -31,9 +31,16 @@ function TrackOrderContent() {
     }
 
     try {
+      // ✅ Traz a OS + Feedbacks (Comentários) + Attachments (Anexos/Fotos)
       const { data, error } = await supabase
         .from("orders")
-        .select("*")
+        .select(
+          `
+          *,
+          order_feedbacks(*),
+          order_attachments(*)
+        `,
+        )
         // @ts-ignore
         .eq("os_number", termoFormatado)
         .maybeSingle();
@@ -56,15 +63,13 @@ function TrackOrderContent() {
     }
   };
 
-  // GATILHO AUTOMÁTICO: Se tiver código na URL, busca na hora que a página abre!
   useEffect(() => {
     if (urlCode) {
-      setCode(urlCode); // Preenche o campo de texto visualmente
-      buscarOS(urlCode); // Executa a busca direto
+      setCode(urlCode);
+      buscarOS(urlCode);
     }
   }, [urlCode]);
 
-  // Auxiliar para formatar as datas vindas do Supabase
   const formatarData = (dataString: string) => {
     if (!dataString) return "";
     const data = new Date(dataString);
@@ -80,7 +85,7 @@ function TrackOrderContent() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 flex flex-col items-center justify-center">
       <div className="w-full max-w-xl bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-2xl space-y-6">
-        {/* BOTÃO VOLTAR PARA A HOME ⬅️ */}
+        {/* BOTÃO VOLTAR */}
         <div className="flex justify-start">
           <Link
             href={retorno === "sindico" ? "/sindico" : "/"}
@@ -90,17 +95,35 @@ function TrackOrderContent() {
           </Link>
         </div>
 
-        {/* CABEÇALHO DA BUSCA */}
-        <div className="text-center space-y-1">
-          <h1 className="text-xl font-black uppercase tracking-wider text-white">
-            🔍 Acompanhar Ordem de Serviço
-          </h1>
-          <p className="text-xs text-slate-400">
-            Visualização em tempo real do andamento do seu chamado
-          </p>
+        {/* CABEÇALHO */}
+        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="space-y-0.5">
+            <h1 className="text-base font-black uppercase tracking-wider text-white flex items-center gap-2">
+              <span>🔍</span> Acompanhar OS
+            </h1>
+            <p className="text-[11px] text-slate-400">
+              Visualização em tempo real do chamado
+            </p>
+          </div>
+
+          {(code || urlCode) && (
+            <button
+              type="button"
+              onClick={() => buscarOS(code || urlCode || "")}
+              disabled={loading}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition-all disabled:opacity-50"
+            >
+              <span className={loading ? "animate-spin inline-block" : ""}>
+                🔄
+              </span>
+              <span className="hidden sm:inline">
+                {loading ? "Atualizando..." : "Atualizar"}
+              </span>
+            </button>
+          )}
         </div>
 
-        {/* SE RETORNAR DO INÍCIO SEM CÓDIGO, PERMITE DIGITAR MANUALLY */}
+        {/* FORMULÁRIO SE NÃO HOUVER CÓDIGO NA URL */}
         {!urlCode && (
           <form
             onSubmit={(e) => {
@@ -127,24 +150,24 @@ function TrackOrderContent() {
           </form>
         )}
 
-        {/* ESTADO DE CARREGAMENTO MANUAL */}
+        {/* STATUS DE CARREGAMENTO */}
         {loading && (
           <div className="text-xs text-slate-400 text-center py-4 animate-pulse">
             ⏳ Buscando informações do chamado técnico...
           </div>
         )}
 
-        {/* ERRO: CHAMADO NÃO ENCONTRADO */}
+        {/* MENSAGEM DE ERRO */}
         {searched && erro && !loading && (
-          <div className="text-xs bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl text-center font-medium animate-in fade-in duration-200">
+          <div className="text-xs bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl text-center font-medium">
             ⚠️ {erro}
           </div>
         )}
 
-        {/* ================= RESULTADO DO ACOMPANHAMENTO ================= */}
+        {/* RESULTADO DA OS */}
         {order && !loading && (
-          <div className="border-t border-slate-800 pt-5 space-y-5 animate-in fade-in duration-300">
-            {/* CARD DE DETALHES GERAIS */}
+          <div className="border-t border-slate-800 pt-5 space-y-5">
+            {/* INFORMAÇÕES BÁSICAS */}
             <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/60 space-y-3 text-xs">
               <div className="flex justify-between items-center border-b border-slate-800/40 pb-2">
                 <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">
@@ -166,23 +189,19 @@ function TrackOrderContent() {
               )}
             </div>
 
-            {/* LINHA DO TEMPO DINÂMICA */}
+            {/* LINHA DO TEMPO */}
             <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-5 space-y-5">
               <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-800 pb-2 flex items-center gap-1.5">
                 <span>📍</span> PROGRESSO ATUAL
               </h3>
 
               <div className="relative pl-6 border-l-2 border-slate-800 space-y-6 ml-2">
-                {/* STATUS 1: ABERTO */}
+                {/* 1. CHAMADO ABERTO */}
                 <div className="relative">
                   <div className="absolute -left-[31px] top-0.5 bg-amber-500 text-slate-950 w-3.5 h-3.5 rounded-full ring-4 ring-slate-900" />
                   <div className="text-xs">
                     <p className="font-bold text-slate-200">
                       Chamado Aberto com Sucesso
-                    </p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">
-                      Triagem inicial enviada. Aguardando análise da
-                      administração do condomínio.
                     </p>
                     {order.created_at && (
                       <p className="text-[9px] text-slate-500 font-medium mt-1">
@@ -192,7 +211,37 @@ function TrackOrderContent() {
                   </div>
                 </div>
 
-                {/* STATUS 2: EM ANDAMENTO */}
+                {/* 2. AGENDAMENTO DE VISITA */}
+                <div className="relative">
+                  <div
+                    className={`absolute -left-[31px] top-0.5 w-3.5 h-3.5 rounded-full ring-4 ring-slate-900 transition-colors ${
+                      order.status === "agendado" ||
+                      order.status === "em_andamento" ||
+                      order.status === "em_atendimento" ||
+                      order.status === "concluido"
+                        ? "bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.3)]"
+                        : "bg-slate-800"
+                    }`}
+                  />
+                  <div
+                    className={`text-xs ${
+                      order.status === "aberto" ? "opacity-35" : "opacity-100"
+                    }`}
+                  >
+                    <p className="font-bold text-slate-200 flex items-center gap-1.5">
+                      Agendamento de Visita
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">
+                      {order.data_agendamento
+                        ? `Visita agendada para: ${new Date(order.data_agendamento).toLocaleString("pt-BR")}`
+                        : order.status === "agendado"
+                          ? "Visita confirmada pela equipe. Aguardando realização do serviço."
+                          : "Aguardando definição do agendamento técnico."}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 3. EM ANDAMENTO / ATENDIMENTO */}
                 <div className="relative">
                   <div
                     className={`absolute -left-[31px] top-0.5 w-3.5 h-3.5 rounded-full ring-4 ring-slate-900 transition-colors ${
@@ -204,20 +253,24 @@ function TrackOrderContent() {
                     }`}
                   />
                   <div
-                    className={`text-xs ${order.status === "aberto" ? "opacity-35" : "opacity-100"}`}
+                    className={`text-xs ${
+                      order.status === "aberto" || order.status === "agendado"
+                        ? "opacity-35"
+                        : "opacity-100"
+                    }`}
                   >
                     <p className="font-bold text-slate-200">
                       Técnico Designado & Manutenção Iniciada
                     </p>
                     <p className="text-[10px] text-slate-400 mt-0.5">
                       {order.tecnico_name
-                        ? `O profissional encarregado (${order.tecnico_name}) já iniciou os reparos no local.`
-                        : "A ordem foi direcionada para a equipe técnica e um prestador está a caminho."}
+                        ? `O profissional (${order.tecnico_name}) está no atendimento.`
+                        : "A ordem foi direcionada para a equipe técnica."}
                     </p>
                   </div>
                 </div>
 
-                {/* STATUS 3: CONCLUÍDO */}
+                {/* 4. CONCLUÍDO */}
                 <div className="relative">
                   <div
                     className={`absolute -left-[31px] top-0.5 w-3.5 h-3.5 rounded-full ring-4 ring-slate-900 transition-colors ${
@@ -227,59 +280,128 @@ function TrackOrderContent() {
                     }`}
                   />
                   <div
-                    className={`text-xs ${order.status !== "concluido" ? "opacity-35" : "opacity-100"}`}
+                    className={`text-xs ${
+                      order.status !== "concluido"
+                        ? "opacity-35"
+                        : "opacity-100"
+                    }`}
                   >
                     <p className="font-bold text-slate-200">
                       Ordem de Serviço Finalizada
-                    </p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">
-                      O problema foi totalmente resolvido pelo técnico. Caso
-                      precise de suporte adicional, abra um novo chamado.
                     </p>
                   </div>
                 </div>
               </div>
             </div>
+            {/* FOTOS / ANEXOS DA OS (Trata order_attachments + photo_url) */}
+            {(() => {
+              const anexos = order.order_attachments || [];
 
-            {/* FOTO DO MORADOR (Abertura do Chamado) */}
-            {order.photo_url && (
-              <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-950 p-3 text-center">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-blue-400 text-left mb-2 pl-1">
-                  📸 Foto Anexada na Abertura:
-                </p>
-                <img
-                  src={order.photo_url}
-                  alt="Foto do defeito"
-                  className="max-h-[220px] mx-auto object-contain rounded-lg shadow-md"
-                />
-              </div>
-            )}
+              // Foto anexada pelo técnico
+              const anexoTecnico = anexos.find(
+                (a: any) =>
+                  String(a.uploaded_role).toLowerCase() === "tecnico" ||
+                  String(a.uploaded_role).toLowerCase() === "technician",
+              );
 
-            {/*  FOTO DO TÉCNICO (Conclusão do Chamado) */}
-            {order.status === "concluido" && order.updated_by && (
-              <div className="rounded-xl overflow-hidden border border-emerald-500/20 bg-slate-950 p-3 text-center">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 text-left mb-2 pl-1">
-                  ✅ Evidência de Conclusão (Técnico):
-                </p>
-                <img
-                  src={order.updated_by}
-                  alt="Foto de conclusão"
-                  className="max-h-[220px] mx-auto object-contain rounded-lg shadow-md"
-                />
-              </div>
-            )}
+              // Foto de capa da abertura (coluna photo_url ou anexo do morador)
+              const fotoMorador =
+                order.photo_url ||
+                anexos.find(
+                  (a: any) =>
+                    String(a.uploaded_role).toLowerCase() === "morador" ||
+                    String(a.uploaded_role).toLowerCase() === "sindico",
+                )?.file_url;
 
-            {/* NOTAS DO TÉCNICO / ENCERRAMENTO */}
-            {(order.technical_notes || order.notas_tecnicas) && (
-              <div className="bg-blue-500/5 border border-blue-500/10 p-3.5 rounded-xl text-xs text-slate-300 space-y-1">
-                <span className="font-bold text-blue-400 block uppercase text-[10px] tracking-wider">
-                  📋 Nota de Encerramento:
-                </span>
-                <p className="leading-relaxed italic">
-                  "{order.technical_notes || order.notas_tecnicas}"
-                </p>
-              </div>
-            )}
+              const fotoTecnicoUrl =
+                anexoTecnico?.file_url ||
+                order.updated_by ||
+                order.completion_photo;
+
+              return (
+                <div className="space-y-4">
+                  {/* Foto da Abertura */}
+                  {fotoMorador && (
+                    <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-950 p-3 text-center">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-blue-400 text-left mb-2 pl-1">
+                        📸 Foto Anexada na Abertura:
+                      </p>
+                      <img
+                        src={fotoMorador}
+                        alt="Foto da abertura"
+                        className="max-h-[220px] mx-auto object-contain rounded-lg shadow-md"
+                      />
+                    </div>
+                  )}
+
+                  {/* Foto de Conclusão do Técnico */}
+                  {fotoTecnicoUrl && (
+                    <div className="rounded-xl overflow-hidden border border-emerald-500/20 bg-slate-950 p-3 text-center">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 text-left mb-2 pl-1">
+                        ✅ Evidência do Técnico (Anexo):
+                      </p>
+                      <img
+                        src={fotoTecnicoUrl}
+                        alt="Foto de conclusão do técnico"
+                        className="max-h-[220px] mx-auto object-contain rounded-lg shadow-md"
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* PARECER / COMENTÁRIOS DO TÉCNICO (order_feedbacks + notas diretas) */}
+            {(() => {
+              const feedbacks = order.order_feedbacks || [];
+              const notaDireta =
+                order.technical_notes ||
+                order.notas_tecnicas ||
+                order.parecer_tecnico;
+
+              if (feedbacks.length === 0 && !notaDireta) return null;
+
+              return (
+                <div className="bg-slate-950/60 border border-slate-800 p-4 rounded-xl space-y-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-2 border-b border-slate-800 pb-2">
+                    💬 Parecer / Comentários do Técnico
+                  </h3>
+
+                  {notaDireta && (
+                    <div className="bg-blue-500/5 border border-blue-500/10 p-3 rounded-xl text-xs text-slate-300">
+                      <span className="font-bold text-blue-400 block uppercase text-[10px] tracking-wider mb-1">
+                        📋 Nota de Encerramento:
+                      </span>
+                      <p className="leading-relaxed italic">"{notaDireta}"</p>
+                    </div>
+                  )}
+
+                  {feedbacks.map((f: any) => (
+                    <div
+                      key={f.id || Math.random()}
+                      className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl space-y-1"
+                    >
+                      <div className="flex items-center justify-between text-[11px] text-slate-400">
+                        <span className="font-bold text-blue-300">
+                          🛠️{" "}
+                          {f.author_role
+                            ? f.author_role.toUpperCase()
+                            : "TÉCNICO"}
+                        </span>
+                        <span>
+                          {f.created_at
+                            ? new Date(f.created_at).toLocaleString("pt-BR")
+                            : ""}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-200 whitespace-pre-wrap leading-relaxed pt-1">
+                        {f.message || f.comment || f.texto}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
@@ -287,7 +409,6 @@ function TrackOrderContent() {
   );
 }
 
-// Envolvemos em um Suspense para o Next.js gerenciar o useSearchParams() em build de produção
 export default function TrackOrderPage() {
   return (
     <Suspense
