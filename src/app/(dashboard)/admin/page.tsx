@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { ResetPasswordModal } from "@/components/ResetPasswordModal";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase/client";
 
 export default function AdminDashboard() {
   const router = useRouter();
-
+  const pathname = usePathname();
   // Abas do Painel: 'condos' | 'tecnicos' | 'sindicos'
   const [activeTab, setActiveTab] = useState<
     "condos" | "tecnicos" | "sindicos"
@@ -414,7 +414,14 @@ export default function AdminDashboard() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push("/");
+    router.refresh();
+
+    // Verifica se quem está deslogando é o Admin ou outro perfil
+    const targetLogin = pathname.startsWith("/admin")
+      ? "/admin/login"
+      : "/login";
+
+    router.replace(targetLogin);
   };
 
   // Filtro Dinâmico Combinado de Condomínios (Texto + Notificações)
