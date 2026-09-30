@@ -154,6 +154,15 @@ export default function HomePage() {
             </form>
           </div>
         </div>
+        <div className="space-y-3 flex flex-col items-center sm:items-start">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 text-center sm:text-left"></h4>
+          <button
+            onClick={handleInstallApp}
+            className="text-xs font-bold uppercase tracking-wider bg-blue-600 text-white hover:bg-blue-700 px-4 py-2.5 rounded-xl transition-all shadow-md block whitespace-nowrap"
+          >
+            <span>📲</span> Instalar no Celular
+          </button>
+        </div>
       </main>
 
       {/* SEÇÃO SOBRE NÓS */}
@@ -234,17 +243,6 @@ export default function HomePage() {
                 Acesso Administrativo
               </Link>
             </div>
-          </div>
-          <div className="space-y-3 flex flex-col items-center sm:items-start">
-            <h4 className="font-bold text-white uppercase tracking-wider text-[11px]">
-              Aplicativo Móvel
-            </h4>
-            <button
-              onClick={handleInstallApp}
-              className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-slate-200 px-4 py-2.5 rounded-xl transition-all shadow-md"
-            >
-              <span>📲</span> Instalar no Celular
-            </button>
           </div>
         </div>
         <div className="text-center text-slate-600 border-t border-slate-900/60 pt-6">
