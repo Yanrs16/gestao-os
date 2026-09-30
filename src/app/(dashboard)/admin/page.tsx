@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ResetPasswordModal } from "@/components/ResetPasswordModal";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase/client";
+import NotificationToggle from "@/components/NotificationToggle";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -464,7 +465,7 @@ export default function AdminDashboard() {
             📁 Central<span className="text-blue-500">.OS</span> Control
           </h1>
         </div>
-
+        <NotificationToggle />
         <div className="flex gap-3">
           {activeTab === "condos"
             ? !showForm && (
