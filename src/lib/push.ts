@@ -30,24 +30,27 @@ export async function registerServiceWorkerAndSubscribe() {
 
     const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     if (!vapidPublicKey) {
-      console.error('NEXT_PUBLIC_VAPID_PUBLIC_KEY não está configurada no .env.local!');
+      console.error('NEXT_PUBLIC_VAPID_PUBLIC_KEY não está configurada!');
       return null;
     }
 
     const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
 
-    // 3. Verifica se já existe uma inscrição ativa
+    // 3. Força a renovação da inscrição no Android/Chrome
     let subscription = await registration.pushManager.getSubscription();
 
-    if (!subscription) {
-      // Se não existir, cria uma nova
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: convertedVapidKey,
-      });
+    // Se já existir uma inscrição, cancela a antiga para gerar um endpoint atualizado
+    if (subscription) {
+      await subscription.unsubscribe().catch(() => {});
     }
 
-    // 4. Envia para a API salvar/atualizar no Supabase
+    // Cria uma inscrição 100% nova
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: convertedVapidKey,
+    });
+
+    // 4. Envia para a API salvar no Supabase
     const response = await fetch('/api/push/subscribe', {
       method: 'POST',
       headers: {
