@@ -51,17 +51,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(loginTarget, request.url));
   }
 
-  // 4. Se JÁ ESTIVER logado e tentar acessar qualquer tela de login (/login ou /admin/login):
-  // Redireciona para o painel correto
-  if (isLoginPage && user) {
-    const role = user.user_metadata?.role;
-    let redirectPath = '/admin';
+  // 4. Se JÁ ESTIVER logado e tentar acessar a tela de login do Admin (/admin/login):
+// Redireciona para o painel correspondente ao perfil
+if (pathname === '/admin/login' && user) {
+  const role = user.user_metadata?.role;
+  let redirectPath = '/admin';
 
-    if (role === 'tecnico') redirectPath = '/tecnico';
-    if (role === 'sindico') redirectPath = '/sindico';
+  if (role === 'tecnico') redirectPath = '/tecnico';
+  if (role === 'sindico') redirectPath = '/sindico';
 
-    return NextResponse.redirect(new URL(redirectPath, request.url));
-  }
+  return NextResponse.redirect(new URL(redirectPath, request.url));
+}
 
   // 5. Aplica os cabeçalhos Anti-Cache APENAS nas rotas privadas
   if (isProtectedRoute) {
