@@ -20,9 +20,14 @@ export async function POST(request: Request) {
     const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY?.trim();
 
     if (!serviceKey || !vapidPublicKey || !vapidPrivateKey) {
-      console.error('Variáveis ausentes: SUPABASE_SERVICE_ROLE_KEY ou VAPID');
-      return NextResponse.json({ error: 'Configuração ausente no servidor' }, { status: 500 });
-    }
+  const faltando = [
+    !serviceKey && 'SUPABASE_SERVICE_ROLE_KEY',
+    !vapidPublicKey && 'NEXT_PUBLIC_VAPID_PUBLIC_KEY',
+    !vapidPrivateKey && 'VAPID_PRIVATE_KEY',
+  ].filter(Boolean);
+  console.error('Variáveis ausentes:', faltando);
+  return NextResponse.json({ error: 'Faltando: ' + faltando.join(', ') }, { status: 500 });
+}
 
     webpush.setVapidDetails(
       process.env.VAPID_SUBJECT || 'mailto:admin@centralos.com',
@@ -122,7 +127,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, total: subscriptions?.length ?? 0, sent });
   } catch (err) {
-    console.error('Erro na rota new-order:', err);
-    return NextResponse.json({ error: 'Erro interno no servidor' }, { status: 500 });
-  }
+  console.error('Erro na rota new-order:', err);
+  return NextResponse.json(
+    { error: 'Erro: ' + (err as Error).message },
+    { status: 500 }
+  );
+}
 }
