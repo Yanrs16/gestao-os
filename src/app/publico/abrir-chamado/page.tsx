@@ -129,14 +129,10 @@ function PublicOrderContent() {
 
       // DISPARAR NOTIFICAÇÃO PUSH PARA O ADMIN
       try {
-        await fetch("/api/push/send", {
+        await fetch("/api/push/new-order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: "🚨 Novo Chamado Recebido!",
-            message: `Novo chamado (${randomCode}) aberto no condomínio ${condominioSelecionado.nome || ""}.`,
-            link: "/admin",
-          }),
+          body: JSON.stringify({ osNumber: randomCode }),
         });
       } catch (pushErr) {
         console.error("Erro ao enviar Push:", pushErr);
