@@ -11,57 +11,46 @@ function urlBase64ToUint8Array(base64String: string) {
 }
 
 export async function registerServiceWorkerAndSubscribe() {
-  let step = 'início';
   try {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      alert('Navegador sem suporte a push');
+      console.warn('Navegador sem suporte a push');
       return null;
     }
 
-    step = 'registrar SW';
     const registration = await navigator.serviceWorker.register('/sw.js');
     await navigator.serviceWorker.ready;
 
-    step = 'permissão';
     const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      alert('Permissão: ' + permission);
-      return null;
-    }
+    if (permission !== 'granted') return null;
 
-    step = 'chave VAPID';
     const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim();
     if (!vapidPublicKey) {
-      alert('VAPID key vazia no build');
+      console.error('NEXT_PUBLIC_VAPID_PUBLIC_KEY ausente no build');
       return null;
     }
-    const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
 
-    step = 'subscribe';
     let subscription = await registration.pushManager.getSubscription();
-    if (subscription) await subscription.unsubscribe().catch(() => {});
-    subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: convertedVapidKey,
-    });
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+      });
+    }
 
-    step = 'enviar para API';
     const response = await fetch('/api/push/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(subscription.toJSON()),
     });
+
     if (!response.ok) {
-      const txt = await response.text();
-      alert(`API ${response.status}: ${txt.slice(0, 300)}`);
+      console.error('Erro ao registrar no servidor:', await response.text());
       return null;
     }
 
-    alert('Push OK');
     return subscription;
   } catch (error) {
-    const err = error as Error;
-    alert(`Falhou em "${step}": ${err?.name}: ${err?.message}`);
+    console.error('Erro ao registrar push:', error);
     return null;
   }
 }
